@@ -37,6 +37,8 @@ https://www.elastic.co/blog/how-to-setup-tls-for-elasticsearch-kibana-logstash-f
   tar xvfz kibana-6.5.4-darwin-x86_64.tar.gz
   cp -r certs kibana-6.5.4-darwin-x86_64/config/.
   cp configs/kibana.yml kibana-6.5.4-darwin-x86_64/config/.
+  cd kibana-6.5.4-darwin-x86_64
+  bin/kibana
 
 
 4) Logstash configuration and startup
@@ -419,3 +421,153 @@ cp -r certs filebeat-6.5.4-darwin-x86_64/.
 cp configs/filebeat.yml filebeat-6.5.4-darwin-x86_64/
 cd filebeat-6.5.4-darwin-x86_64
 ./filebeat
+
+6) Vega example. Please copy the following code to vega configurationwindow.
+{
+  "$schema": "https://vega.github.io/schema/vega/v3.json",
+  "padding": 10,
+  "config": {"kibana": {"tooltips": false}},
+  "signals": [
+    {
+      "name": "rotation",
+      "value": 65,
+      "bind": {
+        "input": "range",
+        "min": -180,
+        "max": 180
+      }
+    }
+  ],
+  "data": [
+    {
+      "name": "events",
+      "url": {
+        "%context%": true,
+        "%timefield%": "@timestamp",
+        "index": "apache-*",
+        "body": {
+          "size": 0,
+          "aggs": {
+            "by_country": {
+              "terms": {
+                "field": "geoip.country_code2",
+                "size": 500,
+                "order": {"_count": "desc"}
+              }
+            }
+          }
+        }
+      },
+      "format": {
+        "property": "aggregations.by_country.buckets"
+      }
+    },
+    {"name": "sphere", "values": [{"type": "Sphere"}]},
+    {
+      "name": "graticule",
+      "transform": [
+        { "type": "graticule", "step": [15, 15] }
+      ]
+    }
+    {
+      "name": "countries",
+      "url": {
+        "%type%": "emsfile",
+        "name": "World Countries"
+      },
+      "format": {"property": "features"},
+      "transform": [
+        {
+          "type": "formula",
+          "expr": "datum.properties.iso2",
+          "as": "countryCode"
+        },
+        {
+          "type": "lookup",
+          "from": "events",
+          "key": "key",
+          "fields": ["countryCode"],
+          "values": ["doc_count"],
+          "as": ["count"]
+        }
+      ]
+    }
+  ],
+  "projections": [
+    {
+      "name": "projection",
+      "scale": {"signal": "min(width,height)/2*0.9"},
+      "type": "orthographic",
+      "translate": {"signal": "[width/2, height/2]"},
+      "rotate": [{"signal": "rotation"}, -20, 0]
+    }
+  ],
+  "scales": [
+    {
+      "name": "color",
+      "type": "sqrt",
+      "domain": {"data": "countries", "field": "count"},
+      "range": {"scheme": "Reds"}
+    }
+  ],
+    "legends": [
+    {
+      "fill": "color",
+      "orient": "bottom-right",
+      "title": "Event count",
+      "format": "1d"
+    }
+  ],
+  "marks": [
+    {
+      "type": "shape",
+      "from": {"data": "sphere"},
+      "encode": {
+        "update": {
+          "fill": {"value": "aliceblue"},
+          "stroke": {"value": "black"},
+          "strokeWidth": {"value": 1.5}
+        }
+      },
+      "transform": [
+        {"type": "geoshape", "projection": "projection"}
+      ]
+    },
+    {
+      "type": "shape",
+      "from": {"data": "graticule"},
+      "encode": {
+        "update": {
+          "stroke": {"value": "black"},
+          "strokeWidth": {"value": 0.5}
+        }
+      },
+      "transform": [
+        {"type": "geoshape", "projection": "projection"}
+      ]
+    },
+    {
+      "type": "shape",
+      "from": {"data": "countries"},
+      "encode": {
+        "update": {
+          "fill": {"field": "count", "scale": "color"},
+          "stroke": {"value": "black"},
+          "strokeWidth": {"value": 0.35},
+          "tooltip": {
+            "signal": "{\ntitle: datum.properties.name,\ncode: datum.countryCode,\ncount: datum.count,\n}"
+          }
+        }
+      },
+      "transform": [
+        {"type": "geoshape", "projection": "projection"}
+      ]
+    }
+  ]
+}
+
+7) SQL query example
+POST _xpack/sql?format=txt
+{
+  "query":"SELECT count(timestamp), response FROM \"apache*\" GROUP BY response"
+}
