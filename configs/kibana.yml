@@ -1,0 +1,10 @@
+server.name: kibana
+server.host: "0"
+elasticsearch.url: https://127.0.0.1:9200
+elasticsearch.password: elastic
+elasticsearch.username: elastic
+elasticsearch.ssl.certificateAuthorities: ["config/certs/ca/ca.crt"]
+server.ssl.enabled: true
+server.ssl.certificate: config/certs/kibana/kibana.crt
+server.ssl.key: config/certs/kibana/kibana.key
+xpack.monitoring.ui.container.elasticsearch.enabled: true

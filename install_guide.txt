@@ -1,0 +1,421 @@
+
+
+1) Elasticsearch download, configuration and starting
+- Elasticsearch file configuration example to support TLS connections
+wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.5.4.tar.gz
+tar xvfz elasticsearch-6.5.4.tar.gz
+cp configs/elasticsearch.yml elasticsearch-6.5.4/config/.
+
+
+2) Certificate generation
+#BLOG entry describing in details TLS configuration for ELK stack
+https://www.elastic.co/blog/how-to-setup-tls-for-elasticsearch-kibana-logstash-filebeat-with-offline-install-in-linux
+
+#Quick way to generate certificates
+- Prepare configs/instances.yml file please see file on github respository
+- Run the following commands to create directory with certificates
+  mkdir certs
+  elasticsearch-6.5.4/bin/elasticsearch-certutil cert ca --pem --in configs/instances.yml --out certs/certs.zip
+  cd certs
+  unzip certs.zip
+  cd ..
+
+3) Elasticsearch configuration
+  cp -r certs elasticsearch-6.5.4/config/.
+  cd elasticsearch-6.5.4
+  bin/elasticsearch
+
+
+- Generate elasticsearch passwords
+  cd elasticsearch-6.5.4
+  bin/elasticsearch-setup-passwords interactive
+  cd ..
+
+
+3) Kibana configuration and startup
+  wget https://artifacts.elastic.co/downloads/kibana/kibana-6.5.4-darwin-x86_64.tar.gz
+  tar xvfz kibana-6.5.4-darwin-x86_64.tar.gz
+  cp -r certs kibana-6.5.4-darwin-x86_64/config/.
+  cp configs/kibana.yml kibana-6.5.4-darwin-x86_64/config/.
+
+
+4) Logstash configuration and startup
+  wget https://artifacts.elastic.co/downloads/logstash/logstash-6.5.4.tar.gz
+  tar xvfz logstash-6.5.4.tar.gz
+  cp -r certs logstash-6.5.4/config/.
+  cp configs/logstash.yml logstash-6.5.4/config/.
+  cd logstash-6.5.4
+  bin/logstash
+
+- Logstash pipeline Configuration, please copy the following content to apache pipline ( pipeline has to be created ) Kibana->Management->Logstash pipelines
+  input {
+    beats {
+      port => 5044
+    }
+  }
+
+  filter {
+    grok {
+      match => {
+        "message" => '%{IPORHOST:clientip} %{USER:ident} %{USER:auth} \[%{HTTPDATE:timestamp}\] "%{WORD:verb} %{DATA:request} HTTP/%{NUMBER:httpversion}" %{NUMBER:response:int} (?:-|%{NUMBER:bytes:int}) %{QS:referrer} %{QS:agent}'
+      }
+    }
+    date {
+      match => [ "timestamp", "dd/MMM/YYYY:HH:mm:ss Z" ]
+      locale => "en"
+    }
+    geoip {
+      source => "clientip"
+    }
+    useragent {
+      source => "agent"
+      target => "useragent"
+    }
+  }
+
+  output {
+    elasticsearch {
+      hosts => ["https://localhost:9200"]
+      cacert => 'config/certs/ca/ca.crt'
+      user => 'elastic'
+      password => 'elastic'
+      index => 'apache-%{+YYYY.MM.dd}'
+    }
+  }
+
+- Create apache indexes mapping, Please execute the following request in Kibana->Dev Tools
+
+GET _template/apache_logs
+
+PUT _template/apache_logs
+{
+  "index_patterns": [
+    "apache*"
+  ],
+  "settings": {
+    "index": {
+      "number_of_shards": "1",
+      "number_of_replicas" : "2"
+    }
+  },
+  "mappings": {
+    "doc": {
+      "dynamic_templates": [
+        {
+          "message_field": {
+            "path_match": "message",
+            "match_mapping_type": "string",
+            "mapping": {
+              "norms": false,
+              "type": "text"
+            }
+          }
+        },
+        {
+          "string_fields": {
+            "match": "*",
+            "match_mapping_type": "string",
+            "mapping": {
+              "fields": {
+                "keyword": {
+                  "ignore_above": 256,
+                  "type": "keyword"
+                }
+              },
+              "norms": false,
+              "type": "text"
+            }
+          }
+        }
+      ],
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "@version": {
+          "type": "keyword"
+        },
+        "agent": {
+          "type": "text",
+          "norms": false,
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "auth": {
+          "type": "keyword"
+        },
+        "beat": {
+          "properties": {
+            "hostname": {
+              "type": "keyword"
+            },
+            "name": {
+              "type": "keyword"
+            },
+            "version": {
+              "type": "keyword"
+            }
+          }
+        },
+        "bytes": {
+          "type": "long"
+        },
+        "clientip": {
+          "type": "ip"
+        },
+        "geoip": {
+          "dynamic": "true",
+          "properties": {
+            "city_name": {
+              "type": "text",
+              "norms": false,
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "continent_code": {
+              "type": "keyword"
+            },
+            "country_code2": {
+              "type": "keyword"
+            },
+            "country_code3": {
+              "type": "keyword"
+            },
+            "country_name": {
+              "type": "keyword"
+            },
+            "dma_code": {
+              "type": "long"
+            },
+            "ip": {
+              "type": "ip"
+            },
+            "latitude": {
+              "type": "half_float"
+            },
+            "location": {
+              "type": "geo_point"
+            },
+            "longitude": {
+              "type": "half_float"
+            },
+            "postal_code": {
+              "type": "text",
+              "norms": false,
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "region_code": {
+              "type": "keyword"
+            },
+            "region_name": {
+              "type": "keyword"
+            },
+            "timezone": {
+              "type": "keyword"
+            }
+          }
+        },
+        "host": {
+          "properties": {
+            "architecture": {
+              "type": "keyword"
+            },
+            "name": {
+              "type": "keyword"
+            },
+            "os": {
+              "properties": {
+                "build": {
+                  "type": "keyword"
+                },
+                "family": {
+                  "type": "keyword"
+                },
+                "platform": {
+                  "type": "keyword"
+                },
+                "version": {
+                  "type": "keyword"
+                }
+              }
+            }
+          }
+        },
+        "httpversion": {
+          "type": "keyword"
+        },
+        "ident": {
+          "type": "keyword"
+        },
+        "input": {
+          "properties": {
+            "type": {
+              "type": "keyword"
+            }
+          }
+        },
+        "message": {
+          "type": "text",
+          "norms": false
+        },
+        "offset": {
+          "type": "long"
+        },
+        "prospector": {
+          "properties": {
+            "type": {
+              "type": "keyword"
+            }
+          }
+        },
+        "referrer": {
+          "type": "text",
+          "norms": false,
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "request": {
+          "type": "text",
+          "norms": false,
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "response": {
+          "type": "long"
+        },
+        "source": {
+          "type": "text",
+          "norms": false,
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "tags": {
+          "type": "keyword"
+        },
+        "timestamp": {
+          "type": "date",
+          "format": "dd/MMM/YYYY:HH:mm:ss Z"
+        },
+        "useragent": {
+          "properties": {
+            "build": {
+              "type": "text",
+              "norms": false,
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "device": {
+              "type": "text",
+              "norms": false,
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "major": {
+              "type": "short"
+            },
+            "minor": {
+              "type": "short"
+            },
+            "name": {
+              "type": "text",
+              "norms": false,
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "os": {
+              "type": "text",
+              "norms": false,
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "os_major": {
+              "type": "short"
+            },
+            "os_minor": {
+              "type": "short"
+            },
+            "os_name": {
+              "type": "text",
+              "norms": false,
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            },
+            "patch": {
+              "type": "text",
+              "norms": false,
+              "fields": {
+                "keyword": {
+                  "type": "keyword",
+                  "ignore_above": 256
+                }
+              }
+            }
+          }
+        },
+        "verb": {
+          "type": "text",
+          "norms": false,
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        }
+      }
+    }
+  },
+  "aliases": {}
+
+5) Filebeat configuration
+wget https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-6.5.4-darwin-x86_64.tar.gz
+tar xvfz filebeat-6.5.4-darwin-x86_64.tar.gz
+cp -r certs filebeat-6.5.4-darwin-x86_64/.
+cp configs/filebeat.yml filebeat-6.5.4-darwin-x86_64/
+cd filebeat-6.5.4-darwin-x86_64
+./filebeat

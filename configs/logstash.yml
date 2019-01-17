@@ -1,0 +1,13 @@
+http.host: 0.0.0.0
+xpack.monitoring.elasticsearch.url: https://localhost:9200
+xpack.monitoring.elasticsearch.password: elastic
+xpack.monitoring.elasticsearch.username: elastic
+xpack.monitoring.elasticsearch.ssl.ca: /Users/piotr/Documents/Work/Webinar/kibana/certs/ca/ca.crt
+
+xpack.management.enabled: true
+xpack.management.elasticsearch.url: "https://localhost:9200/"
+xpack.management.elasticsearch.username: elastic	
+xpack.management.elasticsearch.password: elastic
+xpack.management.elasticsearch.ssl.ca: /Users/piotr/Documents/Work/Webinar/kibana/certs/ca/ca.crt
+xpack.management.logstash.poll_interval: 5s
+xpack.management.pipeline.id: ["apache"]
