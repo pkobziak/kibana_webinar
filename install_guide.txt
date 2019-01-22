@@ -1,6 +1,9 @@
 
 
 1) Elasticsearch download, configuration and starting
+- OS required settings ( Linux )
+  sysctl -w vm.max_map_count=262144
+
 - Elasticsearch file configuration example to support TLS connections
 wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.5.4.tar.gz
 tar xvfz elasticsearch-6.5.4.tar.gz
@@ -23,7 +26,8 @@ https://www.elastic.co/blog/how-to-setup-tls-for-elasticsearch-kibana-logstash-f
 3) Elasticsearch configuration
   cp -r certs elasticsearch-6.5.4/config/.
   cd elasticsearch-6.5.4
-  bin/elasticsearch
+  bin/elasticsearch -d
+  cd ..
 
 
 - Generate elasticsearch passwords
