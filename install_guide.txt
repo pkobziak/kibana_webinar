@@ -3,6 +3,7 @@
 1) Elasticsearch download, configuration and starting
 - OS required settings ( Linux )
   sysctl -w vm.max_map_count=262144
+  To set this value permanently, update the vm.max_map_count setting in /etc/sysctl.conf. To verify after rebooting, run sysctl vm.max_map_count.
 
 - Elasticsearch file configuration example to support TLS connections
 wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.5.4.tar.gz
