@@ -33,13 +33,24 @@ https://www.elastic.co/blog/how-to-setup-tls-for-elasticsearch-kibana-logstash-f
 
 
 3) Kibana configuration and startup
-  wget https://artifacts.elastic.co/downloads/kibana/kibana-6.5.4-darwin-x86_64.tar.gz
-  tar xvfz kibana-6.5.4-darwin-x86_64.tar.gz
-  cp -r certs kibana-6.5.4-darwin-x86_64/config/.
-  cp configs/kibana.yml kibana-6.5.4-darwin-x86_64/config/.
-  cd kibana-6.5.4-darwin-x86_64
-  bin/kibana
+   a) OSX version
 
+      # OSX version of kibana installation package
+      wget https://artifacts.elastic.co/downloads/kibana/kibana-6.5.4-darwin-x86_64.tar.gz
+      tar xvfz kibana-6.5.4-darwin-x86_64.tar.gz
+      cp -r certs kibana-6.5.4-darwin-x86_64/config/.
+      cp configs/kibana.yml kibana-6.5.4-darwin-x86_64/config/.
+      cd kibana-6.5.4-darwin-x86_64
+      bin/kibana
+      
+   b) Linux version
+      # Linux version of installation package
+      wget https://artifacts.elastic.co/downloads/kibana/kibana-6.5.4-linux-x86_64.tar.gz
+      tar xvfz kibana-6.5.4-linux-x86_64.tar.gz
+      cp -r certs kibana-6.5.4-linux-x86_64/config/.
+      cp configs/kibana.yml kibana-6.5.4-linux-x86_64/config/.
+      cd kibana-6.5.4-linux-x86_64
+      bin/kibana
 
 4) Logstash configuration and startup
   wget https://artifacts.elastic.co/downloads/logstash/logstash-6.5.4.tar.gz
