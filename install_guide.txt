@@ -430,13 +430,21 @@ PUT _template/apache_logs
   },
   "aliases": {}
 
-5) Filebeat configuration
-wget https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-6.5.4-darwin-x86_64.tar.gz
-tar xvfz filebeat-6.5.4-darwin-x86_64.tar.gz
-cp -r certs filebeat-6.5.4-darwin-x86_64/.
-cp configs/filebeat.yml filebeat-6.5.4-darwin-x86_64/
-cd filebeat-6.5.4-darwin-x86_64
-./filebeat
+5a) Filebeat configuration on OSX
+  wget https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-6.6.0-darwin-x86_64.tar.gz
+  tar xvfz filebeat-6.6.0-darwin-x86_64.tar.gz
+  cp -r certs filebeat-6.6.0-darwin-x86_64/.
+  cp configs/filebeat.yml filebeat-6.6.0-darwin-x86_64/
+  cd filebeat-6.6.0-darwin-x86_64
+  ./filebeat
+
+5b) Filebeat configuration on Linux
+  wget https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-6.6.0-linux-x86_64.tar.gz
+  tar xvfz filebeat-6.6.0-linux-x86_64.tar.gz
+  cp -r certs filebeat-6.6.0-linux-x86_64/.
+  cp configs/filebeat.yml filebeat-6.6.0-linux-x86_64/
+  cd filebeat-6.6.0-linux-x86_64
+  ./filebeat
 
 6) Vega example. Please copy the following code to vega configurationwindow.
 {
