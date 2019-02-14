@@ -31,7 +31,7 @@ https://www.elastic.co/blog/how-to-setup-tls-for-elasticsearch-kibana-logstash-f
   cd ..
 
 
-- Generate elasticsearch passwords
+- Generate elasticsearch passwords ( password should be set to elastic to support provided configuration files )
   cd elasticsearch-6.6.0
   bin/elasticsearch-setup-passwords interactive
   cd ..
