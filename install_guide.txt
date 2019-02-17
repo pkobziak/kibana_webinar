@@ -429,6 +429,7 @@ PUT _template/apache_logs
     }
   },
   "aliases": {}
+}
 
 5a) Filebeat configuration on OSX
   wget https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-6.6.0-darwin-x86_64.tar.gz
